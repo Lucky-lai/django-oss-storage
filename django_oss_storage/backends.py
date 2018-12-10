@@ -1,6 +1,8 @@
 # coding=utf-8
 
 import os
+import urllib
+
 import six
 import shutil
 
@@ -201,7 +203,10 @@ class OssStorage(Storage):
 
     def url(self, name, expire=60 * 60 * 24 * 30):
         key = self._get_key_name(name)
-        return self.bucket.sign_url('GET', key, expire)
+        # return self.bucket.sign_url('GET', key, expire)
+        url = self.bucket.sign_url('GET', key, expire)
+        unquote_url = urllib.parse.unquote(url)
+        return unquote_url
 
     def delete(self, name):
         name = self._get_key_name(name)
