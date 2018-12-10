@@ -84,7 +84,7 @@ class OssStorage(Storage):
         base_path = force_text(self.location)
         final_path = urljoin(base_path + "/", name)
         name = os.path.normpath(final_path.lstrip('/'))
-
+        name = name.replace('\\', '/')
         if six.PY2:
             name = name.encode('utf-8')
         return name
