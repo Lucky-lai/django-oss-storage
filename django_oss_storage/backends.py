@@ -43,12 +43,14 @@ def _normalize_endpoint(endpoint):
     else:
         return endpoint
 
+
 class OssError(Exception):
     def __init__(self, value):
         self.value = value
 
     def __str__(self):
         return repr(self.value)
+
 
 @deconstructible
 class OssStorage(Storage):
@@ -96,7 +98,7 @@ class OssStorage(Storage):
         logger().debug("target name: %s", target_name)
         try:
             # Load the key into a temporary file
-            tmpf = SpooledTemporaryFile(max_size=10*1024*1024)  # 10MB
+            tmpf = SpooledTemporaryFile(max_size=10 * 1024 * 1024)  # 10MB
             obj = self.bucket.get_object(target_name)
             logger().info("content length: %d, requestid: %s", obj.content_length, obj.request_id)
             if obj.content_length is None:
@@ -197,7 +199,7 @@ class OssStorage(Storage):
         logger().debug("files: %s", files)
         return dirs, files
 
-    def url(self, name, expire):
+    def url(self, name, expire=60 * 60 * 24 * 30):
         key = self._get_key_name(name)
         return self.bucket.sign_url('GET', key, expire)
 
@@ -212,6 +214,7 @@ class OssStorage(Storage):
             name += '/'
         logger().debug("delete name: %s", name)
         result = self.bucket.delete_object(name)
+
 
 class OssMediaStorage(OssStorage):
     def __init__(self):
@@ -231,6 +234,7 @@ class OssStaticStorage(OssStorage):
 
     def save(self, name, content, max_length=None):
         return super(OssStaticStorage, self)._save(name, content)
+
 
 class OssFile(File):
     """
