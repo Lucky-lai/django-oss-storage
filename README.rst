@@ -60,6 +60,10 @@ Use the following settings to configure AliCloud OSS file storage.
     # Refer https://www.alibabacloud.com/help/zh/doc-detail/31837.htm for OSS Region & Endpoint
     OSS_ENDPOINT = <Your access endpoint>
 
+    # If use in aliyun internal,add OSS_ENDPOINT_INTERNAL,OSS_USER_INTERNAL,可选的
+    OSS_ENDPOINT_INTERNAL = <Your access internal endpoint>
+    OSS_USE_INTERNAL = True
+
     # The default location for your files
     MEDIA_URL = '/media/'
 

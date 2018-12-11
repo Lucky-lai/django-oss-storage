@@ -23,7 +23,7 @@ from tempfile import SpooledTemporaryFile
 
 import oss2.utils
 import oss2.exceptions
-from oss2 import Auth, Service, Bucket, ObjectIterator
+from oss2 import Auth, Service, Bucket, ObjectIterator, StsAuth
 
 from .defaults import logger
 
@@ -64,12 +64,21 @@ class OssStorage(Storage):
         self.access_key_id = access_key_id if access_key_id else _get_config('OSS_ACCESS_KEY_ID')
         self.access_key_secret = access_key_secret if access_key_secret else _get_config('OSS_ACCESS_KEY_SECRET')
         self.end_point = _normalize_endpoint(end_point if end_point else _get_config('OSS_ENDPOINT'))
+        self.end_point_internal = _normalize_endpoint(end_point if end_point else _get_config('OSS_ENDPOINT_INTERNAL'))
         self.bucket_name = bucket_name if bucket_name else _get_config('OSS_BUCKET_NAME')
-
-        self.auth = Auth(self.access_key_id, self.access_key_secret)
+        if settings.RUN_ON_FC:
+            self.auth = StsAuth(self.access_key_id, self.access_key_secret, settings.OSS_SECURITY_TOKEN)
+        else:
+            self.auth = Auth(self.access_key_id, self.access_key_secret)
         self.service = Service(self.auth, self.end_point)
-        self.bucket = Bucket(self.auth, self.end_point, self.bucket_name)
-
+        use_oss_internal = _get_config('OSS_USE_INTERNAL')
+        # 这里表示，如果是阿里云的内网机器，默认走内网的end_point，否则使用外网的end_point
+        # 使用内网end_point，速度快，不收费
+        if use_oss_internal:
+            self.bucket = Bucket(self.auth, self.end_point_internal, self.bucket_name)
+        else:
+            self.bucket = Bucket(self.auth, self.end_point, self.bucket_name)
+        self.bucket_public = Bucket(self.auth, self.end_point, self.bucket_name)
         # try to get bucket acl to check bucket exist or not
         try:
             self.bucket.get_bucket_acl().acl
@@ -204,9 +213,10 @@ class OssStorage(Storage):
     def url(self, name, expire=60 * 60 * 24 * 30):
         key = self._get_key_name(name)
         # return self.bucket.sign_url('GET', key, expire)
-        url = self.bucket.sign_url('GET', key, expire)
-        unquote_url = urllib.parse.unquote(url)
-        return unquote_url
+        # 这里一般是提供给浏览器用的，所以走外网的end_point
+        url = self.bucket_public.sign_url('GET', key, expire)
+        url = url.replace('%2F', '/')
+        return url
 
     def delete(self, name):
         name = self._get_key_name(name)
