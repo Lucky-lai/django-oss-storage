@@ -64,21 +64,30 @@ class OssStorage(Storage):
         self.access_key_id = access_key_id if access_key_id else _get_config('OSS_ACCESS_KEY_ID')
         self.access_key_secret = access_key_secret if access_key_secret else _get_config('OSS_ACCESS_KEY_SECRET')
         self.end_point = _normalize_endpoint(end_point if end_point else _get_config('OSS_ENDPOINT'))
-        self.end_point_internal = _normalize_endpoint(end_point if end_point else _get_config('OSS_ENDPOINT_INTERNAL'))
+
         self.bucket_name = bucket_name if bucket_name else _get_config('OSS_BUCKET_NAME')
-        if settings.RUN_ON_FC:
-            self.auth = StsAuth(self.access_key_id, self.access_key_secret, settings.OSS_SECURITY_TOKEN)
+
+        run_on_fc = getattr(settings, 'RUN_ON_FC', None)
+        #这里表示如果运行在阿里云的函数计算服务器中，需要使用stsauth进行鉴权
+        if run_on_fc:
+            oss_security_token = _get_config('OSS_SECURITY_TOKEN')
+            self.auth = StsAuth(self.access_key_id, self.access_key_secret, oss_security_token)
         else:
             self.auth = Auth(self.access_key_id, self.access_key_secret)
+
         self.service = Service(self.auth, self.end_point)
-        use_oss_internal = _get_config('OSS_USE_INTERNAL')
+
+        use_oss_internal = getattr(settings, 'OSS_USE_INTERNAL', None)
         # 这里表示，如果是阿里云的内网机器，默认走内网的end_point，否则使用外网的end_point
         # 使用内网end_point，速度快，不收费
         if use_oss_internal:
+            self.end_point_internal = _normalize_endpoint(
+                end_point if end_point else _get_config('OSS_ENDPOINT_INTERNAL'))
             self.bucket = Bucket(self.auth, self.end_point_internal, self.bucket_name)
         else:
             self.bucket = Bucket(self.auth, self.end_point, self.bucket_name)
         self.bucket_public = Bucket(self.auth, self.end_point, self.bucket_name)
+
         # try to get bucket acl to check bucket exist or not
         try:
             self.bucket.get_bucket_acl().acl
@@ -233,7 +242,7 @@ class OssStorage(Storage):
 
 class OssMediaStorage(OssStorage):
     def __init__(self):
-        if settings.OSS_HOME_DIR:
+        if hasattr(settings, "OSS_HOME_DIR"):
             self.location = urljoin(settings.OSS_HOME_DIR + '/', settings.MEDIA_URL.lstrip('/'))
         else:
             self.location = settings.MEDIA_URL
@@ -246,7 +255,7 @@ class OssMediaStorage(OssStorage):
 
 class OssStaticStorage(OssStorage):
     def __init__(self):
-        if settings.OSS_HOME_DIR:
+        if hasattr(settings, "OSS_HOME_DIR"):
             self.location = urljoin(settings.OSS_HOME_DIR + '/', settings.STATIC_URL.lstrip('/'))
         else:
             self.location = settings.STATIC_URL
