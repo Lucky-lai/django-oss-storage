@@ -64,6 +64,9 @@ Use the following settings to configure AliCloud OSS file storage.
     OSS_ENDPOINT_INTERNAL = <Your access internal endpoint>
     OSS_USE_INTERNAL = True
 
+    # If run in aliyun function computer service ,please add RUN_ON_FC
+    RUN_ON_FC = True
+
     # The default location for your files
     MEDIA_URL = '/media/'
 
