@@ -57,7 +57,7 @@ Use the following settings to configure AliCloud OSS file storage.
     OSS_BUCKET_NAME = <Your bucket name>
 
     # Can set a home dir for the project
-    OSS_HOME = <Some dir>
+    OSS_HOME_DIR = <Some dir>
 
     # The URL of AliCloud OSS endpoint
     # Refer https://www.alibabacloud.com/help/zh/doc-detail/31837.htm for OSS Region & Endpoint
