@@ -233,7 +233,10 @@ class OssStorage(Storage):
 
 class OssMediaStorage(OssStorage):
     def __init__(self):
-        self.location = settings.MEDIA_URL
+        if settings.OSS_HOME_DIR:
+            self.location = urljoin(settings.OSS_HOME_DIR + '/', settings.MEDIA_URL.lstrip('/'))
+        else:
+            self.location = settings.MEDIA_URL
         logger().debug("locatin: %s", self.location)
         super(OssMediaStorage, self).__init__()
 
@@ -243,7 +246,10 @@ class OssMediaStorage(OssStorage):
 
 class OssStaticStorage(OssStorage):
     def __init__(self):
-        self.location = settings.STATIC_URL
+        if settings.OSS_HOME_DIR:
+            self.location = urljoin(settings.OSS_HOME_DIR + '/', settings.STATIC_URL.lstrip('/'))
+        else:
+            self.location = settings.STATIC_URL
         logger().info("locatin: %s", self.location)
         super(OssStaticStorage, self).__init__()
 
