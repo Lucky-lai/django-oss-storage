@@ -56,6 +56,9 @@ Use the following settings to configure AliCloud OSS file storage.
     # The name of the bucket to store files in
     OSS_BUCKET_NAME = <Your bucket name>
 
+    # Can set a home dir for the project
+    OSS_HOME = <Some dir>
+
     # The URL of AliCloud OSS endpoint
     # Refer https://www.alibabacloud.com/help/zh/doc-detail/31837.htm for OSS Region & Endpoint
     OSS_ENDPOINT = <Your access endpoint>
@@ -66,6 +69,7 @@ Use the following settings to configure AliCloud OSS file storage.
 
     # If run in aliyun function computer service ,please add RUN_ON_FC
     RUN_ON_FC = True
+
 
     # The default location for your files
     MEDIA_URL = '/media/'
