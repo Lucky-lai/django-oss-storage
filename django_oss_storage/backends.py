@@ -19,7 +19,7 @@ from django.conf import settings
 from django.utils.encoding import force_text, force_bytes
 from django.utils.deconstruct import deconstructible
 from django.utils.timezone import utc
-from tempfile import SpooledTemporaryFile
+from tempfile import SpooledTemporaryFile,NamedTemporaryFile
 
 import oss2.utils
 import oss2.exceptions
@@ -118,7 +118,7 @@ class OssStorage(Storage):
         logger().debug("target name: %s", target_name)
         try:
             # Load the key into a temporary file
-            tmpf = SpooledTemporaryFile(max_size=10 * 1024 * 1024)  # 10MB
+            tmpf = NamedTemporaryFile()  # 10MB
             obj = self.bucket.get_object(target_name)
             logger().info("content length: %d, requestid: %s", obj.content_length, obj.request_id)
             if obj.content_length is None:
