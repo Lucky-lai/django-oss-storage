@@ -67,11 +67,10 @@ class OssStorage(Storage):
 
         self.bucket_name = bucket_name if bucket_name else _get_config('OSS_BUCKET_NAME')
 
-        run_on_fc = getattr(settings, 'RUN_ON_FC', None)
-        #这里表示如果运行在阿里云的函数计算服务器中，需要使用stsauth进行鉴权
-        if run_on_fc:
-            oss_security_token = _get_config('OSS_SECURITY_TOKEN')
-            self.auth = StsAuth(self.access_key_id, self.access_key_secret, oss_security_token)
+        sts_token = getattr(settings, 'ALIYUN_STS_TOKEN', None)
+        #这里表示如果有sts_token，需要使用stsauth进行鉴权
+        if sts_token:
+            self.auth = StsAuth(self.access_key_id, self.access_key_secret, sts_token)
         else:
             self.auth = Auth(self.access_key_id, self.access_key_secret)
 
