@@ -66,9 +66,11 @@ Use the following settings to configure AliCloud OSS file storage.
     OSS_ENDPOINT = <Your access endpoint>
 
     # If use in aliyun internal,add OSS_ENDPOINT_INTERNAL,OSS_USER_INTERNAL,可选的
+	OSS_USE_INTERNAL = True
     OSS_ENDPOINT_INTERNAL = <Your access internal endpoint>
-    OSS_USE_INTERNAL = True
 
+	#阿里云oss自定义域名，返回鉴权url时会使用自定义域名返回
+	OSS_CUSTOM_DOMAIN= <Your Domain>
 
 
     # The default location for your files

@@ -1,2 +1,4 @@
 venv
 tests/test.log
+.idea/
+tests/django-oss-storage-test/test.log
