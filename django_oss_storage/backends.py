@@ -7,7 +7,7 @@ import six
 import shutil
 
 try:
-    from urllib.parse import urljoin
+    from urllib.parse import urljoin, urlsplit, urlunsplit
 except ImportError:
     from urlparse import urljoin
 
@@ -19,7 +19,7 @@ from django.conf import settings
 from django.utils.encoding import force_text, force_bytes
 from django.utils.deconstruct import deconstructible
 from django.utils.timezone import utc
-from tempfile import SpooledTemporaryFile,NamedTemporaryFile
+from tempfile import SpooledTemporaryFile, NamedTemporaryFile
 
 import oss2.utils
 import oss2.exceptions
@@ -68,7 +68,7 @@ class OssStorage(Storage):
         self.bucket_name = bucket_name if bucket_name else _get_config('OSS_BUCKET_NAME')
 
         sts_token = getattr(settings, 'ALIYUN_STS_TOKEN', None)
-        #这里表示如果有sts_token，需要使用stsauth进行鉴权
+        # 这里表示如果有sts_token，需要使用stsauth进行鉴权
         if sts_token:
             self.auth = StsAuth(self.access_key_id, self.access_key_secret, sts_token)
         else:
@@ -218,12 +218,19 @@ class OssStorage(Storage):
         logger().debug("files: %s", files)
         return dirs, files
 
-    def url(self, name, expire=60 * 60 * 24 * 30):
+    def url(self, name, expire=60 * 60):
         key = self._get_key_name(name)
+        custom_domain = getattr(settings, 'OSS_CUSTOM_DOMAIN', None)
         # return self.bucket.sign_url('GET', key, expire)
         # 这里一般是提供给浏览器用的，所以走外网的end_point
         url = self.bucket_public.sign_url('GET', key, expire)
         url = url.replace('%2F', '/')
+        if custom_domain:
+            url_list = list(urlsplit(url))
+            custom_domain_list = list(urlsplit(custom_domain))
+            url_list[0] = custom_domain_list[0]
+            url_list[1] = custom_domain_list[1]
+            url = urlunsplit(url_list)
         return url
 
     def delete(self, name):

@@ -3,6 +3,7 @@
 import os
 import logging
 import requests
+from urllib.parse import urlsplit
 from datetime import timedelta
 from contextlib import contextmanager
 from logging.handlers import RotatingFileHandler
@@ -24,6 +25,7 @@ fh = RotatingFileHandler(logfile, mode='a', maxBytes=50 * 1024 * 1024, backupCou
 formatter = logging.Formatter("%(asctime)s %(levelname)-8s[%(filename)s:%(lineno)d(%(funcName)s)] %(message)s")
 fh.setFormatter(formatter)
 logger.addHandler(fh)
+
 
 class TestOssStorage(SimpleTestCase):
 
@@ -158,13 +160,13 @@ class TestOssStorage(SimpleTestCase):
             modified_time = default_storage.modified_time("test.txt")
             logging.info("modified time: %s", modified_time)
             self.assertTrue(is_naive(modified_time))
-            #self.assertLess(abs(modified_time - make_naive(timezone.now(), utc)), timedelta(seconds=10))
+            # self.assertLess(abs(modified_time - make_naive(timezone.now(), utc)), timedelta(seconds=10))
             self.assertEqual(default_storage.accessed_time("test.txt"), modified_time)
             self.assertEqual(default_storage.created_time("test.txt"), modified_time)
 
     def test_get_modified_time(self):
         tzname = "Asia/Shanghai"
-        with self.settings(USE_TZ = False, TIME_ZONE = tzname), self.save_file():
+        with self.settings(USE_TZ=False, TIME_ZONE=tzname), self.save_file():
             modified_time = default_storage.get_modified_time("test.txt")
             logging.info("modified time: %s", modified_time)
             logging.info("is naive: %s", is_naive(modified_time))
@@ -173,7 +175,7 @@ class TestOssStorage(SimpleTestCase):
             self.assertLess(abs(modified_time - timezone.now()), timedelta(seconds=10))
             self.assertEqual(default_storage.get_accessed_time("test.txt"), modified_time)
             self.assertEqual(default_storage.get_created_time("test.txt"), modified_time)
-        with self.settings(USE_TZ = True, TIME_ZONE = tzname), self.save_file():
+        with self.settings(USE_TZ=True, TIME_ZONE=tzname), self.save_file():
             modified_time = default_storage.get_modified_time("test.txt")
             logging.info("modified time: %s", modified_time)
             logging.info("is naive: %s", is_naive(modified_time))
@@ -194,14 +196,14 @@ class TestOssStorage(SimpleTestCase):
 
     def test_listdir(self):
         self.assertFalse(default_storage.exists("test"))
-        with self.save_file(), self.save_file(name = "test/test.txt"):
+        with self.save_file(), self.save_file(name="test/test.txt"):
             self.assertEqual(default_storage.listdir("."), ([u'media/test/'], [u'media/test.txt']))
             self.assertEqual(default_storage.listdir("test"), ([], [u'media/test/test.txt']))
             self.assertEqual(default_storage.listdir("test/"), ([], [u'media/test/test.txt']))
             self.assertEqual(default_storage.listdir("test/test/"), ([], []))
 
     def test_endpoint_url(self):
-        with self.settings(OSS_ENDPOINT = "https://oss-cn-shanghai.aliyuncs.com"), self.save_file() as name:
+        with self.settings(OSS_ENDPOINT="https://oss-cn-shanghai.aliyuncs.com"), self.save_file() as name:
             self.assertEqual(name, "test.txt")
             self.assertEqual(default_storage.open(name).read(), b"test")
 
@@ -238,7 +240,7 @@ class TestOssStorage(SimpleTestCase):
             self.assertEqual(response.headers['Content-Type'], "text/plain")
 
     def test_configured_url(self):
-        with self.settings(MEDIA_URL= "/media/"), self.save_file():
+        with self.settings(MEDIA_URL="/media/"), self.save_file():
             url = default_storage.url("test.txt", 60)
             logging.info("url: %s", url)
             response = requests.get(url)
@@ -291,3 +293,15 @@ class TestOssStorage(SimpleTestCase):
         self.assertRaises(ImproperlyConfigured):
             _get_config('INVALID_ENV_VARIABLE_NAME')
         '''
+
+    def test_custom_domain(self):
+        with self.settings(OSS_CUSTOM_DOMAIN="http://fc-oss.dggene.com"),self.save_file():
+            url = default_storage.url("test.txt", 100)
+            logging.info("url: %s", url)
+            url_list = list(urlsplit(url))
+            custom_domain_list = list(urlsplit(settings.OSS_CUSTOM_DOMAIN))
+            response = requests.get(url)
+            self.assertEqual(url_list[1], custom_domain_list[1])
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.content, b"test")
+            self.assertEqual(response.headers['Content-Type'], "text/plain")
