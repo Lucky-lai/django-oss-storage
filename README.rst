@@ -72,6 +72,9 @@ Use the following settings to configure AliCloud OSS file storage.
     # 阿里云oss自定义域名，返回鉴权url时会使用自定义域名返回
     OSS_CUSTOM_DOMAIN= <Your Domain>
 
+    # 设置静态文件是否是公共读，如果设置为公共读状态，无需在使用鉴权访问，方便用于cdn
+    OSS_STATIC_PUBLIC_READ= True
+
 
     # The default location for your files
     MEDIA_URL = '/media/'

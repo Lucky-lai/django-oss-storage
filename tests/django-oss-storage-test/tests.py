@@ -295,7 +295,7 @@ class TestOssStorage(SimpleTestCase):
         '''
 
     def test_custom_domain(self):
-        with self.settings(OSS_CUSTOM_DOMAIN="http://fc-oss.dggene.com"),self.save_file():
+        with self.settings(OSS_CUSTOM_DOMAIN="http://fc-oss.dggene.com"), self.save_file():
             url = default_storage.url("test.txt", 100)
             logging.info("url: %s", url)
             url_list = list(urlsplit(url))
@@ -305,3 +305,31 @@ class TestOssStorage(SimpleTestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.content, b"test")
             self.assertEqual(response.headers['Content-Type'], "text/plain")
+
+    def test_static_public_read(self):
+        with self.settings(OSS_STATIC_PUBLIC_READ=True), self.save_file(storage=OssStaticStorage()):
+            url = staticfiles_storage.url('test.txt', 60)
+            response = requests.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.content, b"test")
+            self.assertEqual(response.headers['Content-Type'], "text/plain")
+            self.assertNotIn('OSSAccessKeyId', url)
+
+        with self.settings(OSS_STATIC_PUBLIC_READ=False), self.save_file(name='test2.txt', storage=OssStaticStorage()):
+            url = staticfiles_storage.url('test2.txt', 60)
+            response = requests.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.content, b"test")
+            self.assertEqual(response.headers['Content-Type'], "text/plain")
+            self.assertIn('OSSAccessKeyId', url)
+
+    def test_static_public_read_custom_domain(self):
+        with self.settings(OSS_STATIC_PUBLIC_READ=True, OSS_CUSTOM_DOMAIN="http://fc-oss.dggene.com"), self.save_file(
+                storage=OssStaticStorage()):
+            url = staticfiles_storage.url('test.txt', 60)
+            response = requests.get(url)
+            self.assertIn('fc-oss.dggene.com', url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.content, b"test")
+            self.assertEqual(response.headers['Content-Type'], "text/plain")
+            self.assertNotIn('OSSAccessKeyId', url)

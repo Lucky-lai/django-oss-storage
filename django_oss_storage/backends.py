@@ -269,7 +269,32 @@ class OssStaticStorage(OssStorage):
         super(OssStaticStorage, self).__init__()
 
     def save(self, name, content, max_length=None):
-        return super(OssStaticStorage, self)._save(name, content)
+        save_name = super()._save(name, content)
+        object_name = self._get_key_name(name)
+        # static file support public read
+        public_read = getattr(settings, "OSS_STATIC_PUBLIC_READ", False)
+        if public_read:
+            self.bucket.put_object_acl(object_name, oss2.OBJECT_ACL_PUBLIC_READ)
+        return save_name
+
+    def _get_oss_host(self):
+        if hasattr(settings, "OSS_CUSTOM_DOMAIN"):
+            host = settings.OSS_CUSTOM_DOMAIN
+        else:
+            host = 'https://{bucket}.{oss_endpoint}'.format(bucket=self.bucket_name,
+                                                            oss_endpoint=_get_config('OSS_ENDPOINT'))
+        return host
+
+    def url(self, name, expire=60 * 60):
+        key = self._get_key_name(name)
+        # static file support public read
+        public_read = getattr(settings, "OSS_STATIC_PUBLIC_READ", False)
+        if public_read:
+            host = self._get_oss_host()
+            url = urljoin(host, key)
+        else:
+            url = super().url(name, expire)
+        return url
 
 
 class OssFile(File):
